@@ -23,6 +23,8 @@ protected:
 private slots:
     void Myprint();
     void on_send_clicked();
+    void on_load_clicked();
+    void on_run_clicked();
 
 private:
     Ui::MainWindow *ui;
