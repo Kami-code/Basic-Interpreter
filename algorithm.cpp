@@ -37,60 +37,42 @@ bool judge(string s) {
     ss >> local_code.code_number >> local_code.code_type; //按照 序号 命令 表达式的格式输入
     const string &type = local_code.code_type;
 
-    if (type == "REM") {
-        qDebug() << QString::fromStdString(ss.str()) << Qt::endl;
+    if (type == "REM" || type == "LET" || type == "IF" || type == "PRINT" || type == "GOTO" || type == "END") {
         uniquePush(local_code, codes);
         return true;
     }
-    else if (type == "LET") {
-        string variable, equal; int value;
-        ss >> variable >> equal >> value; //目前把value当做常数，之后要修改为表达式求值
-        if (equal == "=") {
-            uniquePush(local_code, codes);
-            //variables[variable] = value;
-            //qDebug() << "create " << QString::fromStdString(variable) << "=" << value << Qt::endl;
-            return true;
-        }
-        else {
-            return false;
-        }
-    }
-    else if (type == "IF") {
+    else {
         uniquePush(local_code, codes);
-        qDebug() << QString::fromStdString(local_code.code_string) << Qt::endl;
-        return true;
+        return false;
     }
-    else if (type == "PRINT") {
-        uniquePush(local_code, codes);
-        qDebug() << QString::fromStdString(local_code.code_string) << Qt::endl;
-        return true;
-    }
-    else if (type == "GOTO") {
-        uniquePush(local_code, codes);
-        qDebug() << QString::fromStdString(local_code.code_string) << Qt::endl;
-        return true;
-    }
-    else if (type == "END") {
-        uniquePush(local_code, codes);
-        qDebug() << QString::fromStdString(local_code.code_string) << Qt::endl;
-        return true;
-    }
-    return false;
-//    while(ss) {
-//        string local_string;
-//        ss >> local_string;
-//        qDebug() << QString::fromStdString(local_string) << Qt::endl;
-//    }
-//    return true;
+
 }
 
 extern string process_expression(string, map<string, int>&, int&);
 
+
+string& replace_all(string& str, const string& old_value, const string& new_value)
+{
+    string::size_type pos=0;
+    while((pos=str.find(old_value,pos))!= string::npos)
+    {
+        str=str.replace(pos,old_value.length(),new_value);
+        if(new_value.length()>0)
+        {
+            pos+=new_value.length();
+        }
+    }
+    return str;
+
+}
+
+//处理
 int process_code(queue <string> &result_strings, queue <string> &grammer_strings, code_class *code_pointer) {
     stringstream ss;
     string codeNumber = ""; string tmpb;
     code_class &local_code = *(code_pointer);
-    ss << local_code.code_string;
+
+    ss << replace_all(local_code.code_string, "=", " = ");
     if (local_code.code_type == "PRINT") {
 
         string expression = "";
@@ -200,6 +182,12 @@ int process_code(queue <string> &result_strings, queue <string> &grammer_strings
                 codeNumber + " END\n";
         return -2;
     }
+    else { //非法指令的情况
+        ss >> codeNumber;
+        local_code.grammer =
+                codeNumber + " CODE ERROR\n";
+        return -2;
+    }
 }
 
 void execute_codes(vector<code_class>& codes_vector, queue <string> &result_strings, queue <string> &grammer_strings) { //执行CODEs
@@ -208,7 +196,16 @@ void execute_codes(vector<code_class>& codes_vector, queue <string> &result_stri
         pendingCodes.push(&(*i));
         code_class *frontCode = pendingCodes.front(); pendingCodes.pop();
         qDebug() << "CODE：" << QString::fromStdString(frontCode->code_string) << Qt::endl;
-        int next_number = process_code(result_strings, grammer_strings, frontCode);
+        int next_number;
+        try {
+            next_number = process_code(result_strings, grammer_strings, frontCode);
+        }  catch (...) {
+            qDebug() << "Code Error!" << endl;
+            grammer_strings.push("Code Error!");
+            result_strings.push("Code Error!");
+            return;
+        }
+
         if (next_number > 0) {
             bool found = false;
             for (auto j = codes_vector.begin(); j != codes_vector.end(); ++j) { //此处O(N)查找可以降低到O(logN)
