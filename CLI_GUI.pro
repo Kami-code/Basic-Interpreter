@@ -25,3 +25,8 @@ FORMS += \
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+DISTFILES += \
+    Basic Interpreter.assets/image-20210413193105381.png \
+    Basic Interpreter.assets/image-20210413193138093.png \
+    README.md
