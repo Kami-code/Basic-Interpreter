@@ -3,6 +3,7 @@
 #include<stack>
 #include<queue>
 #include<map>
+#include "algorithm.h"
 using namespace std;
 
 
@@ -49,6 +50,8 @@ int getPriority(string s, int index) {
     if (index <= s.size() - 1 && s.substr(index, 2) == "**") return getPriority(s.substr(index, 2));
     else return getPriority(s.substr(index, 1));
 }
+
+extern save_class saver;
 
 void print_stack(stack <tree_node* > a) {
     tree_node* val;
@@ -165,7 +168,11 @@ void inorderTraversal (tree_node* root) { //set level
 stack <string> operatorStack;
 stack <tree_node*> valueStack;
 
-string process_expression (string s , map<string, int> &variables, int &ans) {
+string process_expression (string s ,  int &ans, int flag = 1) {
+    while(valueStack.empty() != true) valueStack.pop();
+    while(operatorStack.empty() != true) operatorStack.pop();
+    //flag = 1，同时进行
+    //flag = 0，单纯生成表达式树，ans无效。
     for (int i = 0; i < s.size(); ++i) {
         if (s[i] == ' ') continue;
         string local_variable = "";
@@ -182,12 +189,19 @@ string process_expression (string s , map<string, int> &variables, int &ans) {
         i -= in_this;
 
         if (local_variable != "") {
-            if (variables.find(local_variable) == variables.end()) {
-                throw("variable not find!");
+            if (saver.variables.find(local_variable) == saver.variables.end()) {
+                if (flag == 1) {
+                    throw("variable not find!");
+                }
+                else {
+                    tree_node *now_tree_node = new tree_node(local_variable, 0);
+                    cout << "local_variable = " << local_variable << " value = " << saver.variables[local_variable] << endl;
+                    valueStack.push(now_tree_node);
+                }
             }
             else {
-                tree_node *now_tree_node = new tree_node(local_variable, variables[local_variable]);
-                cout << "local_variable = " << local_variable << " value = " << variables[local_variable] << endl;
+                tree_node *now_tree_node = new tree_node(local_variable, saver.variables[local_variable]);
+                cout << "local_variable = " << local_variable << " value = " << saver.variables[local_variable] << endl;
                 valueStack.push(now_tree_node);
             }
         }
