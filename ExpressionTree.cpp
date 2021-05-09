@@ -208,6 +208,8 @@ string parseExpression (string s, int& ans, map<string, int>& variables, int fla
     while (operatorStack.empty() == false) { //栈不空就做栈里的操作
         dosomething(operatorStack, valueStack);
     }
+    if (valueStack.empty() == true) throw("error");
+    if (valueStack.size() != 1) throw("error");
     ans = valueStack.top()->ans;
     //cout << valueStack.top()->ans << endl;
     tree_node* root = valueStack.top();

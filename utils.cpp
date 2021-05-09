@@ -64,6 +64,34 @@ char* parse_number(char* char_head, int &return_status) {
     return char_head;
 }
 
+char* parse_quotation_mark(char* char_head, int &return_status) {
+    char_head = parse_space(char_head, return_status);
+    while(char_head[0] != '\0') {
+        if (char_head[0] == '\'') {
+             return char_head;
+        }
+        else if (char_head[0] == '\"') {
+            return char_head;
+        }
+        char_head++;
+        return_status++;
+    }
+    return_status = -1;
+    return char_head;
+}
+
+char* parse_comma(char* char_head, int &return_status) {
+    char_head = parse_space(char_head, return_status);
+    while(char_head[0] != '\0') {
+        if (char_head[0] == ',') {
+             return char_head;
+        }
+        char_head++;
+        return_status++;
+    }
+    return char_head;
+}
+
 char* parse_string(char* char_head, int &return_status, string &parsed_string) {
     char_head = parse_space(char_head, return_status);
     char* start_head = char_head;
@@ -179,4 +207,27 @@ char* reverse_parse_string(char* tail, int &return_status, string &parsed_string
     parsed_string.assign(parsed_string_str, return_status);
 
     return tail;
+}
+
+void parse_str_variable(string exp, int &return_status, string &parsed_string) {
+    char head[MAXLENGTH];
+    strcpy(head, exp.c_str());
+    char* now_head = head, *now_tail = head + exp.size() - 1;
+    return_status = -1;
+    now_head = parse_space(now_head, return_status);
+    now_tail = reverse_parse_space(now_tail, return_status);
+    now_tail[1] = '\0';
+    if (now_tail <= now_head) {
+        return;
+    }
+    if (       (now_head[0] == '\'' && now_tail[0] == '\'')
+            || (now_head[0] == '\"' && now_tail[0] == '\"')) {
+        for (char* i = now_head + 1; i < now_tail; i++) {
+            if (i[0] == '\'' || i[0] == '\"') {
+                return;
+            }
+        }
+    }
+    return_status = 0;
+    parsed_string = now_head;
 }

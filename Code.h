@@ -10,8 +10,9 @@
 #include <stdio.h>
 #include <algorithm>
 #include "ExpressionTree.h"
+#include "utils.h"
 using namespace std;
-
+#define MAXLENGTH 100
 
 class Code{
 private:
@@ -22,6 +23,7 @@ private:
     string exp1, exp2, comment; //PRINT有exp1，IF有exp1、exp2，REM有comment
     string variable;        //LET, INPUT特有
     string compare_symbol;  //IF特有
+    vector<string> structured_strings;
     int next_PC;
 public:
     Code();
@@ -39,6 +41,7 @@ public:
     bool operator < (const Code &x) { //按照序号比大小
         return (this->code_number < x.code_number);
     }
+    vector<string>* getStructuredStrings() { return &structured_strings; }
     void createGrammerTree();
 };
 

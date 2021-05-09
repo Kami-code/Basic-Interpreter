@@ -1,17 +1,18 @@
 #include "Code.h"
 #include "utils.h"
-#define MAXLENGTH 100
+
 
 Code::Code(){
     code_number = -1;
     code_type = "";
     code_string = "";
-    grammer = "";
+    grammer = "undefined";
     exp1 = "";
     exp2 = "";
     comment = "";
     variable = "";
     next_PC = -1;
+    structured_strings.clear();
 }
 
 
@@ -48,6 +49,23 @@ Code::Code(string s){   //构造时传入字符串，并自动根据字符串构建语法树
             //... 没有读到表达式的情况
         }
         cout << "exp1: " << exp1 << endl;
+    }
+    else if (code_type == "PRINTF") {
+        while (header[0] != '\0') {
+            int return_status = 0;
+            header = parse_space(header, return_status);
+            char *header1 = parse_comma(header, return_status);
+            char n_str[MAXLENGTH];
+            strncpy(n_str, header, return_status);
+            n_str[return_status] = '\0';
+            structured_strings.push_back(string(n_str));
+//            cout << "n_str = " << n_str << endl;
+            header = header1 + 1;
+        }
+        for (size_t i = 0; i < structured_strings.size(); ++i) {
+            cout <<  structured_strings[i] << endl;
+        }
+
     }
     else if (code_type == "INPUT") {
         //input的情况，格式为 variable
@@ -93,20 +111,27 @@ Code::Code(string s){   //构造时传入字符串，并自动根据字符串构建语法树
     cout << "code_number: " << code_number << endl;
     cout << "type: " << code_type << endl;
     cout << "----------------------------------" << endl;
+    createGrammerTree();
 }
 
 void Code::createGrammerTree() {
+    grammer = "invaild";
     int return_status = 0;
     map<string, int> placeholder;
     if (code_type == "IF") {
-        string grammer_string_1 = parseExpression(exp1, return_status, placeholder, 0);
-        string grammer_string_2 = parseExpression(exp2, return_status, placeholder, 0);
-        grammer =
-                to_string(code_number) + " IF THEN\n"
-                + grammer_string_1 + '\n'
-                + "    " + compare_symbol + '\n'
-                + grammer_string_2 + '\n'
-                + "    " + to_string(next_PC) + '\n';
+        try {
+            string grammer_string_1 = parseExpression(exp1, return_status, placeholder, 0);
+            string grammer_string_2 = parseExpression(exp2, return_status, placeholder, 0);
+            grammer =
+                    to_string(code_number) + " IF THEN\n"
+                    + grammer_string_1 + '\n'
+                    + "    " + compare_symbol + '\n'
+                    + grammer_string_2 + '\n'
+                    + "    " + to_string(next_PC) + '\n';
+        }  catch (...) {
+
+        }
+
     }
     else if (code_type == "REM") {
         grammer =
@@ -114,11 +139,24 @@ void Code::createGrammerTree() {
                 + "    " + comment;
     }
     else if (code_type == "LET") {
-        string grammer_string_1 = parseExpression(exp1, return_status, placeholder, 0);
-        grammer =
-                to_string(code_number) + " LET =\n"
-                + "    " + variable + '\n'
-                + grammer_string_1 + '\n';
+        try {
+            string grammer_string_1 = parseExpression(exp1, return_status, placeholder, 0);
+            grammer =
+                    to_string(code_number) + " LET =\n"
+                    + "    " + variable + '\n'
+                    + grammer_string_1 + '\n';
+        }  catch (...) {
+            string str_variable;
+            parse_str_variable(exp1, return_status, str_variable);
+            if (return_status == -1) {
+                return;
+            }
+            else {
+                grammer =
+                        to_string(code_number) + " LET =\n"
+                        + "    " + str_variable + "\n";
+            }
+        }
     }
     else if (code_type == "GOTO") {
         grammer =
@@ -135,11 +173,23 @@ void Code::createGrammerTree() {
                 to_string(code_number) + " END\n";
     }
     else if (code_type == "PRINT") {
-        string grammer_string_1 = parseExpression(exp1, return_status, placeholder, 0);
-        grammer =
-                to_string(code_number) + " PRINT\n"
-                + grammer_string_1 + '\n';
+        try {
+            string grammer_string_1 = parseExpression(exp1, return_status, placeholder, 0);
+            grammer =
+                    to_string(code_number) + " PRINT\n"
+                    + grammer_string_1 + '\n';
+        }  catch (...) {
+
+        }
     }
+    else if (code_type == "PRINTF") {
+        grammer =
+                to_string(code_number) + " PRINTF\n";
+        for (size_t i = 0; i < structured_strings.size(); ++i) {
+            grammer += + "    " + structured_strings[i] + '\n';
+        }
+    }
+
 }
 
 
@@ -161,7 +211,8 @@ void Codes::uniquePush(Code code) {
     }
     if (code.getCodeType() != "") codes_vec.push_back(code);
     sort(codes_vec.begin(), codes_vec.end());
-    codes_hightlight_index.clear();
+    while(codes_hightlight_index.empty() != true) codes_hightlight_index.pop_back();
+//    codes_hightlight_index.clear();
     int cnt = 0;
     for (size_t i = 0; i < codes_vec.size(); ++i) {
         int len = codes_vec[i].getCodeString().size();

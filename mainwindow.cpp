@@ -9,7 +9,6 @@
 #include <queue>
 using namespace std;
 
-queue<string>result_strings, gammer_strings;
 
 void MainWindow::Myprint() {
     qDebug() << ui->textEdit->toPlainText() << Qt::endl;
@@ -28,11 +27,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->runButton, &QPushButton::released, this, &MainWindow::on_run_clicked);
     connect(ui->clearButton, &QPushButton::released, this, &MainWindow::on_clear_clicked);
     connect(ui->stepButton, &QPushButton::released, this, &MainWindow::on_step_clicked);
-    highlights = {
-            {0, QColor(100, 255, 100)},
-            {145, QColor(255, 100, 100)},
-            {180, QColor(255, 100, 100)}
-        };
+    highlights = {};
 }
 
 bool MainWindow::eventFilter(QObject *target, QEvent *event)
@@ -85,54 +80,148 @@ void MainWindow::uirender() {
 
 void MainWindow::on_send_clicked()
 {
-    QString msg = ui->textEdit->toPlainText();
+    string exp = (ui->textEdit->toPlainText()).toStdString();
+    if (sim->getStatus() == SHLT) { //INPUT的情况
+        int return_status = 0;
+        map<string, int> &variables = (*sim->getVariables());
+        map<string, string> &str_variables = (*sim->getStrVariables());
+        Code code = sim->getLatestCode();
+        string variable = code.getVariable();
+        if (code.getCodeType() == "INPUT") {
+            try {
+                parseExpression(exp, return_status, variables, 1);
+                variables[code.getVariable()] = return_status;
+                ui->resultBrowser->append(QString::fromStdString(to_string(return_status)));
+                auto iter=str_variables.find(variable);
+                if (iter != str_variables.end()) str_variables.erase(iter);
+                sim->setStatus(SAOK);
+                on_step_clicked();
+                return;
+            }  catch (...) {
+                QMessageBox::critical(NULL, "输入出错", "该语句有错误", QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+            }
+        }
+        else if (code.getCodeType() == "INPUTS") {
+            try {
+                string str_variable;
+                parse_str_variable(exp, return_status, str_variable);
+                if (return_status == -1) return;
+                else {
+                    str_variables[variable] = str_variable;
+                    ui->resultBrowser->append(QString::fromStdString(str_variable));
+                    auto iter=variables.find(variable);
+                    if (iter != variables.end()) variables.erase(iter);
+                    sim->setStatus(SAOK);
+                    on_step_clicked();
+                    return;
+                }
+            }  catch (...) {
+                QMessageBox::critical(NULL, "输入出错", "该语句有错误", QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+            }
+        }
+    }
+    else {
+        codes->uniquePush(Code(exp));
+        uirender();
+    }
 }
 
-
+void MainWindow::Sleep(int msec)
+{
+    QTime dieTime = QTime::currentTime().addMSecs(msec);
+    while( QTime::currentTime() < dieTime )
+        QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+}
 void MainWindow::on_run_clicked()
 {
+    on_step_clicked();
+    Sleep(200);
+    while(debug_mode) {
+        on_step_clicked();
+        Sleep(200);
+    }
 }
 
 void MainWindow::on_step_clicked()
 {
     int return_status = 0;
     if (debug_mode == 0) {
+        sim->getVariables()->clear();
+        sim->getStrVariables()->clear();
         sim->refreshCodes(codes);
         //得到即将执行的下一行代码
-        return_status = codes->getHightlightByIndex(0);
-        if (return_status == -1) {
+        if (codes->getCodesVec()->size() == 0) {
             debug_mode = 0;
-            return;
         }
         else {
-            debug_mode = return_status;
+            for (size_t i = 0; i < codes->getCodesVec()->size(); ++i) {
+                if ((*codes->getCodesVec())[i].getGrammer() == "invaild") {
+                    highlights.append({codes->getHightlightByIndex(i), QColor(255, 100, 100)});
+                }
+            }
+            ui->grammarBrowser->clear();
+            ui->grammarBrowser->append(QString::fromStdString((*codes->getCodesVec())[0].getGrammer()));
+            debug_mode = codes->getHightlightByIndex(0);
+            highlights.append({0, QColor(100, 255, 100)});
             ui->clearButton->setEnabled(false);
             ui->loadButton->setEnabled(false);
         }
-
+        uirender();
+        return;
     }
     else {
+        status old_status = sim->getStatus();
         sim->singleStepSim(return_status);
         cout << "return status = " << return_status << endl;
-        if (return_status == SAOK) {
+        if (return_status == SAOK || return_status == SHLT) {
+            if (old_status == SAOK && return_status == SHLT) {
+                ui->resultBrowser->append(QString::fromStdString("  ?"));
+            }
+
             int index = codes->searchByPC(sim->get_PC());
-            cout << "index = " << index << endl;
-            cout << "getHightlightByIndex = " << codes->getHightlightByIndex(index) << endl;
+            if (index == -1) {
+                QMessageBox::critical(NULL, "程序出错", "没有找到终止的END语句", QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+                debug_mode = 0;
+                highlights.clear();
+                ui->clearButton->setEnabled(true);
+                ui->loadButton->setEnabled(true);
+                uirender();
+                return;
+            }
+            ui->grammarBrowser->clear();
+            ui->grammarBrowser->append(QString::fromStdString((*codes->getCodesVec())[index].getGrammer()));
+            if (sim->getLatestCode().getCodeType() == "PRINT" || sim->getLatestCode().getCodeType() == "PRINTF") {
+                ui->resultBrowser->append(QString::fromStdString(sim->getLatestOut()));
+            }
             debug_mode = codes->getHightlightByIndex(index);
+            if (highlights.empty() == false) highlights.last() = {debug_mode, QColor(100, 255, 100)};
+            else highlights.append({debug_mode, QColor(100, 255, 100)});
+
+            uirender();
+            return;
             //得到即将执行的下一行代码
         }
-//        else if (return_status == SINS) {
-//            QMessageBox::critical(NULL, "程序出错", "该语句有错误", QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
-//        }
-//        else if (return_status == SFIN) {
-//            QMessageBox::about(NULL, "程序结束", "被调试的程序正常结束");
-//        }
-        highlights = {
-                {debug_mode, QColor(100, 255, 100)}
-            };
+        else if (return_status == SINS) {
+            QMessageBox::critical(NULL, "程序出错", "该语句有错误", QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+            debug_mode = 0;
+            highlights.clear();
+            ui->clearButton->setEnabled(true);
+            ui->loadButton->setEnabled(true);
+            uirender();
+            return;
+        }
+        else if (return_status == SFIN) {
+            QMessageBox::about(NULL, "程序结束", "被调试的程序正常结束");
+            debug_mode = 0;
+            highlights.clear();
+            ui->clearButton->setEnabled(true);
+            ui->loadButton->setEnabled(true);
+            uirender();
+            return;
+        }
+
     }
 
-    uirender();
 }
 
 void MainWindow::on_load_clicked()
@@ -168,16 +257,14 @@ void MainWindow::on_load_clicked()
 
 void MainWindow::on_clear_clicked()
 {
-    while(result_strings.empty() != true) {
-        result_strings.pop();
-    }
-    while(gammer_strings.empty() != true) {
-        gammer_strings.pop();
-    }
     ui->grammarBrowser->clear();
     ui->codeBroswer->clear();
     ui->resultBrowser->clear();
     ui->variableBrowser->clear();
+    delete codes;
+    delete sim;
+    codes = new Codes();
+    sim = new Sim(codes);
 }
 
 MainWindow::~MainWindow()
