@@ -1,6 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "algorithm.h"
+#include "ExpressionTree.h"
 #include <vector>
 #include <QApplication>
 #include <QFileDialog>
@@ -9,7 +9,6 @@
 #include <queue>
 using namespace std;
 
-extern save_class saver;
 queue<string>result_strings, gammer_strings;
 
 void MainWindow::Myprint() {
@@ -21,11 +20,19 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
+    codes = new Codes();
+    sim = new Sim(codes);
     ui->setupUi(this);
     ui->textEdit->installEventFilter(this);
     connect(ui->loadButton, &QPushButton::released, this, &MainWindow::on_load_clicked);
     connect(ui->runButton, &QPushButton::released, this, &MainWindow::on_run_clicked);
     connect(ui->clearButton, &QPushButton::released, this, &MainWindow::on_clear_clicked);
+    connect(ui->stepButton, &QPushButton::released, this, &MainWindow::on_step_clicked);
+    highlights = {
+            {0, QColor(100, 255, 100)},
+            {145, QColor(255, 100, 100)},
+            {180, QColor(255, 100, 100)}
+        };
 }
 
 bool MainWindow::eventFilter(QObject *target, QEvent *event)
@@ -47,68 +54,85 @@ bool MainWindow::eventFilter(QObject *target, QEvent *event)
 
 void MainWindow::uirender() {
     ui->codeBroswer->setText("");
-    for (auto i = saver.codes.begin(); i != saver.codes.end(); ++i) {
-        QString q_code_string = QString::fromStdString((*i).code_string);
+    for (auto i = codes->getCodesVec()->begin(); i != codes->getCodesVec()->end(); ++i) {
+        QString q_code_string = QString::fromStdString((*i).getCodeString());
         ui->codeBroswer->append(q_code_string);
     }
+
+    QTextBrowser *code = ui->codeBroswer;
+    QTextCursor cursor(code->document());
+    // 用于维护的所有高亮的链表
+    QList<QTextEdit::ExtraSelection> extras;
+    // 配置高亮，并加入到 extras 中
+    for (auto &line : highlights) {
+        QTextEdit::ExtraSelection h;
+        h.cursor = cursor;
+        // 下面这些的功能，请大家自行查看文档
+        h.cursor.setPosition(line.first);
+        h.cursor.movePosition(QTextCursor::StartOfLine);
+        h.cursor.movePosition(QTextCursor::EndOfLine);
+        h.format.setProperty(QTextFormat::FullWidthSelection, true);
+        h.format.setBackground(line.second);
+        extras.append(h);
+    }
+    // 应用高亮效果
+    code->setExtraSelections(extras);
+
+    ui->variableBrowser->setText(QString::fromStdString(sim->showVariables()));
+
     return;
 }
-
-extern int judge(string, int&);
-extern void execute_codes(vector<code_class>&);
 
 void MainWindow::on_send_clicked()
 {
     QString msg = ui->textEdit->toPlainText();
-    int res = 0;
-    int judge_result_mode = judge(msg.toStdString(), res);
-    if (judge_result_mode == 0) return; //判断是否满足序号 命令的情况
-    else if (judge_result_mode == 2) { //PRINT的情况
-        ui->resultBrowser->append(QString::fromStdString(to_string(res)));
-        ui->textEdit->clear();
-        ui->textEdit->setFocus();
-    }
-    else if (judge_result_mode == 1 || judge_result_mode == 3 || judge_result_mode == 5){ //普通情况
-        if (judge_result_mode == 5) ui->resultBrowser->append("?");
-        ui->textEdit->clear();
-        ui->textEdit->setFocus();
-        uirender();
-    }
-    else if (judge_result_mode == 4) { //纯数字且Input的情况
-        qDebug() << "这是一个INPUT情况" << endl;
-        ui->textEdit->clear();
-        ui->textEdit->setFocus();
-        QTextCursor tc = ui->resultBrowser->textCursor();
-        tc.movePosition(QTextCursor::End);
-        tc.insertText(" " + msg);
-        if (saver.status == 2) {
-            saver.status = 3;
-            on_run_clicked();
-        }
-    }
 }
 
 
 void MainWindow::on_run_clicked()
 {
+}
 
-    execute_codes(saver.codes);
-    //打印执行结果
-    qDebug() << "队列是否为空? " << endl;
-    while (result_strings.empty() != true) {
-        ui->resultBrowser->append(QString::fromStdString(result_strings.front()));
-        qDebug() << "开始打印结果" << QString::fromStdString(result_strings.front()) << endl;
-        result_strings.pop();
+void MainWindow::on_step_clicked()
+{
+    int return_status = 0;
+    if (debug_mode == 0) {
+        sim->refreshCodes(codes);
+        //得到即将执行的下一行代码
+        return_status = codes->getHightlightByIndex(0);
+        if (return_status == -1) {
+            debug_mode = 0;
+            return;
+        }
+        else {
+            debug_mode = return_status;
+            ui->clearButton->setEnabled(false);
+            ui->loadButton->setEnabled(false);
+        }
+
     }
-    if (saver.status == 2) {
-        ui->resultBrowser->append("?");
+    else {
+        sim->singleStepSim(return_status);
+        cout << "return status = " << return_status << endl;
+        if (return_status == SAOK) {
+            int index = codes->searchByPC(sim->get_PC());
+            cout << "index = " << index << endl;
+            cout << "getHightlightByIndex = " << codes->getHightlightByIndex(index) << endl;
+            debug_mode = codes->getHightlightByIndex(index);
+            //得到即将执行的下一行代码
+        }
+//        else if (return_status == SINS) {
+//            QMessageBox::critical(NULL, "程序出错", "该语句有错误", QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+//        }
+//        else if (return_status == SFIN) {
+//            QMessageBox::about(NULL, "程序结束", "被调试的程序正常结束");
+//        }
+        highlights = {
+                {debug_mode, QColor(100, 255, 100)}
+            };
     }
-    ui->grammarBrowser->clear();
-    //打印表达式树
-    for (auto j = saver.codes.begin(); j != saver.codes.end(); ++j) { //此处O(N)查找可以降低到O(logN)
-        if ((*j).grammer == "") continue;
-        ui->grammarBrowser->append(QString::fromStdString((*j).grammer));
-    }
+
+    uirender();
 }
 
 void MainWindow::on_load_clicked()
@@ -129,12 +153,11 @@ void MainWindow::on_load_clicked()
         while(1) {
             QString a = "";
             a = in.readLine();
-            int b;
-            judge(a.toStdString(), b);
             if (a == "") break;
-            ui->codeBroswer->append(a);
+            codes->uniquePush(Code(a.toStdString()));
         }
         update();
+        uirender();
         return;
     }
     else { //点取消
@@ -145,7 +168,6 @@ void MainWindow::on_load_clicked()
 
 void MainWindow::on_clear_clicked()
 {
-    saver.reinit();
     while(result_strings.empty() != true) {
         result_strings.pop();
     }
@@ -155,6 +177,7 @@ void MainWindow::on_clear_clicked()
     ui->grammarBrowser->clear();
     ui->codeBroswer->clear();
     ui->resultBrowser->clear();
+    ui->variableBrowser->clear();
 }
 
 MainWindow::~MainWindow()

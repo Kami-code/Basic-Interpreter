@@ -5,6 +5,8 @@
 #include <QKeyEvent>
 #include <QWidget>
 #include <QDebug>
+#include <QMessageBox>
+#include <Simulator.h>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -17,6 +19,10 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
+    Codes* codes;
+    Sim* sim;
+    QList<QPair<int, QColor>> highlights;
+    int debug_mode = 0;
 protected:
     bool eventFilter(QObject *target, QEvent *event);//事件过滤器
     void uirender();
@@ -26,6 +32,7 @@ private slots:
     void on_load_clicked();
     void on_run_clicked();
     void on_clear_clicked();
+    void on_step_clicked();
 
 private:
     Ui::MainWindow *ui;

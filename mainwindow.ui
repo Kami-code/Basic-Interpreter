@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>746</width>
-    <height>507</height>
+    <width>907</width>
+    <height>746</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -31,8 +31,8 @@
      <rect>
       <x>0</x>
       <y>0</y>
-      <width>711</width>
-      <height>451</height>
+      <width>891</width>
+      <height>661</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -68,14 +68,32 @@
       </layout>
      </item>
      <item>
-      <widget class="QLabel" name="label">
-       <property name="text">
-        <string>语句与语法树</string>
-       </property>
-      </widget>
+      <layout class="QHBoxLayout" name="horizontalLayout_3">
+       <item>
+        <widget class="QLabel" name="label_5">
+         <property name="text">
+          <string>语句和语法树</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label">
+         <property name="text">
+          <string>当前变量</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
      <item>
-      <widget class="QTextBrowser" name="grammarBrowser"/>
+      <layout class="QHBoxLayout" name="horizontalLayout">
+       <item>
+        <widget class="QTextBrowser" name="grammarBrowser"/>
+       </item>
+       <item>
+        <widget class="QTextBrowser" name="variableBrowser"/>
+       </item>
+      </layout>
      </item>
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout_6">
@@ -83,6 +101,13 @@
         <widget class="QPushButton" name="loadButton">
          <property name="text">
           <string>载入代码（LOAD)</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="stepButton">
+         <property name="text">
+          <string>调试/单步(DEBUG/STEP)</string>
          </property>
         </widget>
        </item>
@@ -127,7 +152,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>746</width>
+     <width>907</width>
      <height>26</height>
     </rect>
    </property>
