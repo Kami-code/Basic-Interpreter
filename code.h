@@ -9,7 +9,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <algorithm>
-#include "ExpressionTree.h"
+#include "expressiontree.h"
 #include "utils.h"
 using namespace std;
 #define MAXLENGTH 100

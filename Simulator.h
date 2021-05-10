@@ -3,7 +3,7 @@
 #include <vector>
 #include <map>
 #include <cstring>
-#include "Code.h"
+#include "code.h"
 using namespace std;
 
 enum status { SAOK = 0, SHLT, SINS, SFIN};
@@ -27,6 +27,7 @@ public:
     int get_PC() { return now_PC; }
     Code getLatestCode() { return latest_code; }
     string getLatestOut() { return latest_out; }
+    void setLatestCode(Code a) { latest_code = a; }
     map<string, int>* getVariables() { return &variables; }
     map<string, string>* getStrVariables() { return &str_variables; }
 };

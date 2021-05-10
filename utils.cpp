@@ -33,6 +33,10 @@ bool isQuotationMark(char local) {
     else return false;
 }
 
+bool isBrace(char local) {
+    if (local == '(' || local == ')') return true;
+    else return false;
+}
 
 char* parse_space(char* char_head, int &return_status) {
     return_status = 0;  //这个返回值是消去了多少个空格
@@ -118,7 +122,7 @@ char* parse_string(char* char_head, int &return_status, string &parsed_string) {
 char* parse_expression(char* head, int &return_status, string &expression) {
     return_status = 0;  //这个返回值是读取字符的数目
     char* start_head = head;
-    while(isDigit(head[0]) || isLetter(head[0]) || isSpace(head[0]) || isOperator(head[0]) || isQuotationMark(head[0])) {
+    while(isDigit(head[0]) || isLetter(head[0]) || isSpace(head[0]) || isOperator(head[0]) || isQuotationMark(head[0]) || isBrace(head[0])) {
         head++;
         return_status++;
     }
@@ -216,6 +220,8 @@ void parse_str_variable(string exp, int &return_status, string &parsed_string) {
     return_status = -1;
     now_head = parse_space(now_head, return_status);
     now_tail = reverse_parse_space(now_tail, return_status);
+    cout << "now_head = " << now_head << endl;
+    cout << "now_tail = " << now_tail << endl;
     now_tail[1] = '\0';
     if (now_tail <= now_head) {
         return;
@@ -224,10 +230,14 @@ void parse_str_variable(string exp, int &return_status, string &parsed_string) {
             || (now_head[0] == '\"' && now_tail[0] == '\"')) {
         for (char* i = now_head + 1; i < now_tail; i++) {
             if (i[0] == '\'' || i[0] == '\"') {
+                return_status = -1;
                 return;
             }
         }
+        return_status = 0;
+        parsed_string = now_head;
+        return;
     }
-    return_status = 0;
-    parsed_string = now_head;
+    return_status = -1;
+    return;
 }

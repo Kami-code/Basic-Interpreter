@@ -11,6 +11,7 @@ bool isSpace(char);
 bool isOperator(char);
 bool isQuotationMark(char);
 bool isConditionalOperator(char);
+bool isBrace(char);
 
 char* parse_space(char*, int &);
 char* parse_equal(char*, int &);

@@ -1,4 +1,4 @@
-#include "Code.h"
+#include "code.h"
 #include "utils.h"
 
 
@@ -57,7 +57,9 @@ Code::Code(string s){   //构造时传入字符串，并自动根据字符串构建语法树
             char *header1 = parse_comma(header, return_status);
             char n_str[MAXLENGTH];
             strncpy(n_str, header, return_status);
+            if (return_status == 0) break;
             n_str[return_status] = '\0';
+            cout << "pushed string = " << string(n_str) << endl;
             structured_strings.push_back(string(n_str));
 //            cout << "n_str = " << n_str << endl;
             header = header1 + 1;
@@ -68,6 +70,13 @@ Code::Code(string s){   //构造时传入字符串，并自动根据字符串构建语法树
 
     }
     else if (code_type == "INPUT") {
+        //input的情况，格式为 variable
+        header = parse_string(header, return_status, variable);
+        if (1) {
+            //... 没有读到变量的情况
+        }
+    }
+    else if (code_type == "INPUTS") {
         //input的情况，格式为 variable
         header = parse_string(header, return_status, variable);
         if (1) {
@@ -166,6 +175,11 @@ void Code::createGrammerTree() {
     else if (code_type == "INPUT") {
         grammer =
                 to_string(code_number) + " INPUT\n"
+                + "    " + variable + "\n";
+    }
+    else if (code_type == "INPUTS") {
+        grammer =
+                to_string(code_number) + " INPUTS\n"
                 + "    " + variable + "\n";
     }
     else if (code_type == "END") {

@@ -1,6 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "ExpressionTree.h"
+#include "expressiontree.h"
 #include <vector>
 #include <QApplication>
 #include <QFileDialog>
@@ -98,14 +98,17 @@ void MainWindow::on_send_clicked()
                 on_step_clicked();
                 return;
             }  catch (...) {
-                QMessageBox::critical(NULL, "输入出错", "该语句有错误", QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+                QMessageBox::critical(NULL, "输入出错", "请输入一个合法表达式！", QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
             }
         }
         else if (code.getCodeType() == "INPUTS") {
             try {
                 string str_variable;
                 parse_str_variable(exp, return_status, str_variable);
-                if (return_status == -1) return;
+                if (return_status == -1) {
+                    QMessageBox::critical(NULL, "输入出错", "请输入一个合法字符串！", QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+                    return;
+                }
                 else {
                     str_variables[variable] = str_variable;
                     ui->resultBrowser->append(QString::fromStdString(str_variable));
@@ -121,7 +124,50 @@ void MainWindow::on_send_clicked()
         }
     }
     else {
-        codes->uniquePush(Code(exp));
+        Code code_tmp(exp);
+        int code_number = code_tmp.getCodeNumber();
+        string code_type = code_tmp.getCodeType();
+        if (code_number == 0) {
+            if (code_type == "LET") {
+                int exp_val;
+                string exp1 = code_tmp.getExp1();
+                map<string, int> &variables = *sim->getVariables();
+                map<string, string> &str_variables = *sim->getStrVariables();
+                try {
+                    parseExpression(exp1, exp_val, variables, 1);
+                    variables[code_tmp.getVariable()] = exp_val;
+                    auto iter=str_variables.find(code_tmp.getVariable());
+                    if (iter != str_variables.end()) str_variables.erase(iter);
+                }  catch (...) {
+                    string str_variable;
+                    int return_status = 0;
+                    parse_str_variable(exp1, return_status, str_variable);
+                    if (return_status == -1) {
+                        QMessageBox::critical(NULL, "程序出错", "LET语句不合法！", QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+                        return;
+                    }
+                    else {
+                        str_variables[code_tmp.getVariable()] = str_variable;
+                        auto iter=variables.find(code_tmp.getVariable());
+                        if (iter != variables.end()) variables.erase(iter);
+                    }
+                }
+            }
+            else if (code_type == "PRINT") {
+                int exp_val;
+                try {
+                    parseExpression(code_tmp.getExp1(), exp_val, *sim->getVariables(), 1);
+                    ui->resultBrowser->append(QString::fromStdString(to_string(exp_val)));
+                }  catch (...) {
+                    QMessageBox::critical(NULL, "程序出错", "PRINT语句不合法！", QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+                    return;
+                }
+            }
+        }
+        else {
+            codes->uniquePush(code_tmp);
+        }
+
         uirender();
     }
 }

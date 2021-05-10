@@ -9,17 +9,17 @@ CONFIG += c++11
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
-    Code.cpp \
-    ExpressionTree.cpp \
-    Simulator.cpp \
+    code.cpp \
+    expressiontree.cpp \
     main.cpp \
     mainwindow.cpp \
+    simulator.cpp \
     utils.cpp
 
 HEADERS += \
-    Code.h \
-    ExpressionTree.h \
     Simulator.h \
+    code.h \
+    expressiontree.h \
     mainwindow.h \
     utils.h
 

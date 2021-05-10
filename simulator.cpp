@@ -81,8 +81,10 @@ void Sim::singleStepSim(int &return_status) {
     }
     else if (type == "PRINT") {
         int exp_val;
+        cout << "exp = " << now_ins.getExp1() <<  endl;
         try {
             parseExpression(now_ins.getExp1(), exp_val, variables, 1);
+
         }  catch (...) {
             cout << "PRINT中表达式解析出错!" << endl;
             now_status = SINS;  //表达式解析出错的情况
@@ -92,7 +94,7 @@ void Sim::singleStepSim(int &return_status) {
         latest_out = to_string(exp_val);
         now_PC = valP;
     }
-    else if (type == "INPUT") {
+    else if (type == "INPUT" || type == "INPUTS") {
         now_status = SHLT;
         now_PC = valP;
         return_status = now_status;
@@ -138,6 +140,7 @@ void Sim::singleStepSim(int &return_status) {
         string basic_string = structured_strings[0];
         char basic_str[MAXLENGTH];
         strcpy(basic_str, basic_string.c_str());
+        basic_str[basic_string.size()] = '\0';
         char *head = basic_str;
         char *tail_tmp = basic_str + strlen(basic_str) - 1;
         int status;
