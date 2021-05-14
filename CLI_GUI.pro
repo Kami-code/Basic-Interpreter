@@ -33,5 +33,20 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 DISTFILES += \
     Basic Interpreter.assets/image-20210413193105381.png \
+    Basic Interpreter.assets/image-20210413193105381.png \
     Basic Interpreter.assets/image-20210413193138093.png \
-    README.md
+    Basic Interpreter.assets/image-20210413193138093.png \
+    README.md \
+    code examples/test01.txt \
+    code examples/test02.txt \
+    test log.assets/wps10.jpg \
+    test log.assets/wps11.jpg \
+    test log.assets/wps12.jpg \
+    test log.assets/wps13.jpg \
+    test log.assets/wps14.jpg \
+    test log.assets/wps8.jpg \
+    test log.assets/wps9.jpg \
+    test/fibonacci sequence.txt \
+    test/inputs test.txt \
+    test/printf test.txt \
+    test/simple add.txt

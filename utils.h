@@ -26,5 +26,6 @@ char* reverse_parse_string(char*, int &, string &);
 void parse_str_variable(string, int &, string &);
 char* parse_quotation_mark(char* , int &);
 char* parse_comma(char* , int &);
+char* strict_parse_comma(char* , int &);
 
 #endif // UTILS_H

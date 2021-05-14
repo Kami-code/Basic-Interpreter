@@ -51,17 +51,56 @@ Code::Code(string s){   //构造时传入字符串，并自动根据字符串构建语法树
         cout << "exp1: " << exp1 << endl;
     }
     else if (code_type == "PRINTF") {
+        if (header[0] != '\0') {
+            char quotation_mark1, quotation_mark2;
+            char* header_saver,* tail_saver;
+            header = parse_quotation_mark(header, return_status);
+            cout << "header = " << header << endl;
+            header_saver = header;
+            if (header[0] == '\0') return;
+            quotation_mark1 = header[0];
+            header++;
+            header = parse_quotation_mark(header, return_status);
+            cout << "header = " << header << endl;
+            tail_saver = header;
+            if (header[0] == '\0') return;
+            quotation_mark2 = header[0];
+            header++;
+            if (quotation_mark1 != quotation_mark2) return;
+            header = strict_parse_comma(header, return_status);
+
+            cout << "header = " << header << "return_status = " << return_status << endl;
+            if (return_status == 0) return;  //没有正常读取到\0或者逗号
+            else if (return_status == 2) {  //正常读取到了\0
+            }
+            else if (return_status == 1) {
+                header++;
+            }
+            int len = 0;
+            for (char* i = header_saver; i <= tail_saver; ++i) {
+                len++;
+            }
+            cout << "len = " << len << endl;
+            if (len == 0) return;
+            char n_str[MAXLENGTH];
+            strncpy(n_str, header_saver, len);
+            n_str[len] = '\0';
+            cout << "pushed string = " << string(n_str) << endl;
+            structured_strings.push_back(string(n_str));
+        }
         while (header[0] != '\0') {
             int return_status = 0;
             header = parse_space(header, return_status);
+            if (header[0] == '\0') break;
             char *header1 = parse_comma(header, return_status);
             char n_str[MAXLENGTH];
             strncpy(n_str, header, return_status);
-            if (return_status == 0) break;
+
+            cout << "len = " << return_status << endl;
+            if (int(n_str[0]) < 0) break;
             n_str[return_status] = '\0';
             cout << "pushed string = " << string(n_str) << endl;
             structured_strings.push_back(string(n_str));
-//            cout << "n_str = " << n_str << endl;
             header = header1 + 1;
         }
         for (size_t i = 0; i < structured_strings.size(); ++i) {

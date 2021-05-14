@@ -86,6 +86,7 @@ char* parse_quotation_mark(char* char_head, int &return_status) {
 
 char* parse_comma(char* char_head, int &return_status) {
     char_head = parse_space(char_head, return_status);
+
     while(char_head[0] != '\0') {
         if (char_head[0] == ',') {
              return char_head;
@@ -94,6 +95,25 @@ char* parse_comma(char* char_head, int &return_status) {
         return_status++;
     }
     return char_head;
+}
+
+char* strict_parse_comma(char* char_head, int &return_status) {
+    char_head = parse_space(char_head, return_status);
+    if(char_head[0] != '\0') {
+        if (char_head[0] == ',') {
+            return_status = 1;
+            return char_head;
+        }
+        else {
+            return_status = 0;
+            return char_head;
+        }
+    }
+    else {
+        return_status = 2;
+        return char_head;
+    }
+
 }
 
 char* parse_string(char* char_head, int &return_status, string &parsed_string) {

@@ -1,0 +1,6 @@
+10 REM Program to add two numbers
+20 INPUTS n1
+30 INPUTS n2
+50 PRINT n1
+55 PRINT n2
+60 END

@@ -1,0 +1,6 @@
+1 LET a = 6
+2 LET b = "dogs"
+3 LET c = 777
+4 LET d = "cats"
+5 PRINTF "i have {}{} and{}{}.{}",a,b,c,d,"And you?"
+1000 END

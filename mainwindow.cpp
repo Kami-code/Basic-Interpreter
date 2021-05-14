@@ -66,6 +66,7 @@ void MainWindow::uirender() {
         h.cursor.setPosition(line.first);
         h.cursor.movePosition(QTextCursor::StartOfLine);
         h.cursor.movePosition(QTextCursor::EndOfLine);
+        ui->codeBroswer->setTextCursor(h.cursor);
         h.format.setProperty(QTextFormat::FullWidthSelection, true);
         h.format.setBackground(line.second);
         extras.append(h);
